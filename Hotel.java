@@ -7,7 +7,7 @@ import java.io.IOException;
 import java.nio.CharBuffer;
 import java.util.Random;
 
-public class Hotel
+public class Hotel implements Runnable
 {
     // semaphore
     private static Semaphore front_available = new Semaphore( 2, true ); // semaphore
@@ -39,49 +39,48 @@ public class Hotel
         Hotel gt[] = new Hotel[GuestThreads];
         Thread guestThread[] = new Thread[GuestThreads];
 
-        Front_desk front[] = new Front_desk[HotelStaffThreads];
         Thread frontThread[] = new Thread[HotelStaffThreads];
 
         Bellhop bellhop[] = new Bellhop[HotelStaffThreads];
         Thread bellThread[] = new Thread[HotelStaffThreads];
 
-        for (int i = 0; i<HotelStaffThreads; i++){ // this will make the front-desk
-            front[i] = new Front_desk(i);
-            frontThread[i] = new Thread(front[i]);
-            frontThread[i].start();
-        }
+        Hotel bla = new Hotel();
+        Thread hu = new Thread(bla);
+        hu.start();
+
+
+        
         for(int i =0; i < HotelStaffThreads; i++){
             System.out.println("1 loop");
             test.release();
         }
-
-        // for (int i = 0; i<HotelStaffThreads; i++){//this will make the bellhop
-        //     bellhop[i] = new Bellhop(i);
-        //     bellThread[i] = new Thread(bellhop[i]);
-        //     bellThread[i].start();
-        // }
-
-        // for(int i =0; i < HotelStaffThreads; i++){
-        //     System.out.println("2 loop");
-        //     test.release();
-        // }
-
         
 
 
-        for(int i =0; i < HotelStaffThreads; i++){
-            try
-            {
-                frontThread[i].join();
-            }
-            catch (InterruptedException e)
-            {
-            }
-        }
+        // for(int i =0; i < HotelStaffThreads; i++){
+        //     try
+        //     {
+        //         frontThread[i].join();
+        //     }
+        //     catch (InterruptedException e)
+        //     {
+        //     }
+        // }
 
     }
 
+    public void run(){
+        final int GuestThreads = 25;
+        final int HotelStaffThreads = 10;
 
+        Thread frontThread[] = new Thread[HotelStaffThreads];
+
+        for (int i = 0; i<HotelStaffThreads; i++){ // this will make the front-desk
+            Front_desk employee = new Front_desk(i);
+            frontThread[i] = new Thread(employee);
+            frontThread[i].start();
+        }
+    }
 
 
     static class Bellhop implements Runnable {
