@@ -25,9 +25,19 @@ public class Hotel implements Runnable
     static Semaphore gives;
     static Semaphore tips;
 
+    //mutex
+    static Semaphore forguest;
+    static Semaphore forfront;
+    static Semaphore forbell;
+
+
     //queue
     static Queue<Guest> FrontDeskWait;
     static Queue<Guest> BellHopWait;
+
+    //array
+    static int [] front_Identifier; // this will tell the guest which front they enteracted
+    static int [] bellhop_Identifier; // this will tell the guest which bellhop they enteracted
 
     Hotel(){
         Thread hotelThread = new Thread(this);
@@ -43,10 +53,18 @@ public class Hotel implements Runnable
         enter = new Semaphore(0);
         gives = new Semaphore(0);
         tips = new Semaphore(0);
+        forguest = new Semaphore(1);
 
         FrontDeskWait = new LinkedList<>();
         BellHopWait = new LinkedList<>();
 
+        front_Identifier = new int[MaxGuest];
+        bellhop_Identifier = new int[MaxGuest];
+        for(int x=0; x<MaxGuest; x++){
+
+            front_Identifier[x] = 0;
+            bellhop_Identifier[x] = 0;
+        }
 
 
     }
@@ -116,6 +134,10 @@ public class Hotel implements Runnable
         }
 
         public void run() {
+            try {
+            } catch (Exception e) {
+                // TODO: handle exception
+            }
         }
     }
 
@@ -137,9 +159,22 @@ public class Hotel implements Runnable
         }
 
         public void run(){
-           
+           try {
+            EnterHotel();
+            Hotel.forguest.acquire();
+            Hotel.FrontDeskWait.add(this); // adding the guest into the queue for the front
+            Hotel.forguest.release();
+           } catch (Exception e) {
+            // TODO: handle exception
+           }
         }
-       
+       public void EnterHotel(){
+        if(bags <= 1){
+            System.out.println(Role + GuestID + " enter hotel with " + bags + " bag");
+        }else{
+            System.out.println(Role + GuestID + " enter hotel with " + bags + " bags");
+        }
+       }
     }
 
 
