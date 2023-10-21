@@ -7,7 +7,7 @@ import java.io.IOException;
 import java.nio.CharBuffer;
 import java.util.Random;
 
-public class Hotel implements Runnable
+public class Hotel
 {
     // semaphore
     private static Semaphore front_available = new Semaphore( 2, true ); // semaphore
@@ -18,69 +18,46 @@ public class Hotel implements Runnable
     private static Semaphore enter = new Semaphore( 0, true );
     private static Semaphore gives = new Semaphore( 0, true );
     private static Semaphore tips = new Semaphore( 0, true );
-    private static Semaphore test = new Semaphore( 0);//wanted to see if i made the thread correctly
 
-    // void Guest(int num){
-    //     Random random = new Random();
-    //     this.num = num;
-    //     this.role = "Guest";
-    //     int bag = random.nextInt(5)+1;
-    // }
-    // void front_desk(int num){
-    //     this.num = num;
-    //     this.role = "Front desk employee";
-    // }
+
     
     public static void main(String args[]){
 
         final int GuestThreads = 25;
-        final int HotelStaffThreads = 10;
+        final int HotelStaffThreads = 2;
 
-        Hotel gt[] = new Hotel[GuestThreads];
         Thread guestThread[] = new Thread[GuestThreads];
 
         Thread frontThread[] = new Thread[HotelStaffThreads];
 
-        Bellhop bellhop[] = new Bellhop[HotelStaffThreads];
+        
         Thread bellThread[] = new Thread[HotelStaffThreads];
 
-        Hotel bla = new Hotel();
-        Thread hu = new Thread(bla);
-        hu.start();
-
-
         
-        for(int i =0; i < HotelStaffThreads; i++){
-            System.out.println("1 loop");
-            test.release();
-        }
-        
-
-
-        // for(int i =0; i < HotelStaffThreads; i++){
-        //     try
-        //     {
-        //         frontThread[i].join();
-        //     }
-        //     catch (InterruptedException e)
-        //     {
-        //     }
-        // }
-
-    }
-
-    public void run(){
-        final int GuestThreads = 25;
-        final int HotelStaffThreads = 10;
-
-        Thread frontThread[] = new Thread[HotelStaffThreads];
-
         for (int i = 0; i<HotelStaffThreads; i++){ // this will make the front-desk
             Front_desk employee = new Front_desk(i);
             frontThread[i] = new Thread(employee);
             frontThread[i].start();
         }
+
+        for (int i = 0; i<HotelStaffThreads; i++){ // this will make the front-desk
+            Bellhop staffs = new Bellhop(i);
+            bellThread[i] = new Thread(staffs);
+            bellThread[i].start();
+        }
+
+
+        for(int i = 0; i<GuestThreads; i++){
+            Guest customer = new Guest(i);
+            guestThread[i] = new Thread(customer);
+            guestThread[i].start();
+        }
+
+
+    
+
     }
+
 
 
     static class Bellhop implements Runnable {
@@ -94,12 +71,7 @@ public class Hotel implements Runnable
 
         public void run() {
             System.out.println(role + " " + num + " created");
-            try {
-                test.acquire();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-            System.out.println( "Thread " + role + " " + num + " resuming" );
+            
         }
     }
 
@@ -115,11 +87,56 @@ public class Hotel implements Runnable
         public void run() {
             System.out.println(role + " " + num + " created");
             try {
-                test.acquire();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
+                register.acquire();
+
+            } catch (Exception e) {
+                // TODO: handle exception
             }
-            System.out.println( "Thread " + role + " " + num + " resuming" );
+
+        }
+    }
+
+    static class Guest implements Runnable{
+        private int num;
+        private String role;
+        private int bags;
+
+        Guest(int num){
+            this.num = num;
+            role = "Guest ";
+            bags = (int) (Math.floor(Math.random() *5)+1);
+        }
+
+        
+
+        public void run(){
+            System.out.println(role + " " + num + " created");
+
+            try {
+
+                enterhotel();
+                front_available.acquire();
+                register.release();
+
+
+
+
+
+
+
+
+                front_available.release();
+            } catch (Exception e) {
+                // TODO: handle exception
+            }
+        }
+
+        public void enterhotel(){
+            if(bags>1){
+                System.out.println(role + num +" " + "enters hotel with " + bags + " bags" );
+            }else{
+                System.out.println(role + num +" " + "enters hotel with " + bags + " bag" );
+            }
         }
     }
 
