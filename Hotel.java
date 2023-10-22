@@ -127,7 +127,7 @@ public class Hotel implements Runnable
             try {
                 while(true){
                     Hotel.Givesbagstobell.acquire();
-                    Hotel.bell_mutex.acquire();
+                    Hotel.bell_mutex.acquireUninterruptibly();
 
                     Guest g = Hotel.BellHopWait.remove();
                     g.Bellhop_ID = EmployeeID;
@@ -158,7 +158,6 @@ public class Hotel implements Runnable
         int EmployeeID;
         Hotel sim;
         Thread FrontEmployeeThread;
-        static int RoomNum = 1;
         String Role ="Front desk employee ";
         static int assignroomnumber = 0;
 
@@ -174,11 +173,12 @@ public class Hotel implements Runnable
             try {
                 while(true){
                     Hotel.Guest_rdy.acquire();
-                    Hotel.front_mutex.acquire();
+                    Hotel.front_mutex.acquireUninterruptibly();
                     Guest g = Hotel.FrontDeskWait.remove();
                     g.front_ID = EmployeeID;
-                    g.Roomnumber = assignroomnumber;
                     assignroomnumber++;
+                    g.Roomnumber = assignroomnumber;
+                    
                     Hotel.front_mutex.release();
 
                     System.out.println(Role + EmployeeID + " registers " + g.Role + g.GuestID + " and assigns room " + assignroomnumber);
@@ -219,7 +219,7 @@ public class Hotel implements Runnable
         public void run(){
            try {
             EnterHotel();
-            Hotel.Guest_mutex.acquire();
+            Hotel.Guest_mutex.acquireUninterruptibly();
             Hotel.FrontDeskWait.add(this); // adding the guest into the queue for the front
             Hotel.Guest_mutex.release();
 
@@ -232,7 +232,7 @@ public class Hotel implements Runnable
 
             if(bags > 1){
                 Hotel.bellhop_available.acquire();
-                Hotel.Guest_mutex.acquire();
+                Hotel.Guest_mutex.acquireUninterruptibly();
                 Hotel.BellHopWait.add(this);
                 System.out.println(Role + GuestID + " request help with bags");
                 Hotel.Guest_mutex.release();
