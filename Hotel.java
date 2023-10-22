@@ -241,7 +241,7 @@ public class Hotel implements Runnable
                 System.out.println(Role + GuestID + " enter room " + Roomnumber);
                 Hotel.EnterRoom.release();
                 Hotel.deliver.acquire();
-                Hotel.givingtips.acquire();
+                Hotel.givingtips.release();
                 Hotel.bellhop_done.acquire();
             }else{
                 System.out.println(Role + GuestID + " enter room " + Roomnumber);
