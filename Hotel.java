@@ -26,16 +26,21 @@ public class Hotel implements Runnable
     static Semaphore deliver;
     static Semaphore givingtips;
     static Semaphore bellhop_done;
+    static Semaphore GuestLeftfront;
 
     //mutex
     static Semaphore Guest_mutex;
+    static Semaphore completed_mutex;
     static Semaphore front_mutex;
     static Semaphore bell_mutex;
+    static Semaphore A;
+    static Semaphore B;
 
 
     //queue
     static Queue<Guest> FrontDeskWait;
     static Queue<Guest> BellHopWait;
+    static Queue<Guest> Guest_retire;
 
     //array
     static int [] front_Identifier; // this will tell the guest which front they enteracted
@@ -47,25 +52,30 @@ public class Hotel implements Runnable
     }
 
     public void run(){
-        front_available = new Semaphore(2);
-        bellhop_available = new Semaphore(2);
+        front_available = new Semaphore(2,true);
+        bellhop_available = new Semaphore(2,true);
 
-        Guest_rdy = new Semaphore(0);
-        front_done = new Semaphore(0);
-        Givesbagstobell = new Semaphore(0);
-        receivebags = new Semaphore(0);
-        EnterRoom = new Semaphore(0);
-        deliver = new Semaphore(0);
-        givingtips = new Semaphore(0);
-        bellhop_done = new Semaphore(0);
+        Guest_rdy = new Semaphore(0,true);
+        front_done = new Semaphore(0,true);
+        Givesbagstobell = new Semaphore(0,true);
+        receivebags = new Semaphore(0,true);
+        EnterRoom = new Semaphore(0,true);
+        deliver = new Semaphore(0,true);
+        givingtips = new Semaphore(0,true);
+        bellhop_done = new Semaphore(0,true);
+        GuestLeftfront = new Semaphore(0,true);
+        B = new Semaphore(0,true);
+        A = new Semaphore(0,true);
 
-
-        Guest_mutex = new Semaphore(1);
-        front_mutex = new Semaphore(1);
-        bell_mutex = new Semaphore(1);
+        Guest_mutex = new Semaphore(1,true);
+        front_mutex = new Semaphore(1,true);
+        bell_mutex = new Semaphore(1,true);
+        completed_mutex = new Semaphore(1, true);
 
         FrontDeskWait = new LinkedList<>();
         BellHopWait = new LinkedList<>();
+        Guest_retire = new LinkedList<>();
+
 
         front_Identifier = new int[MaxGuest];
         bellhop_Identifier = new int[MaxGuest];
@@ -87,6 +97,7 @@ public class Hotel implements Runnable
         Bellhop bell_employee[] = new Bellhop[MaxEmployee];
         Guest customer[] = new Guest[MaxGuest];
 
+        int counter =0;
 
         for(int x=0; x<MaxEmployee; x++){
             front_employee[x] = new Front_desk(x, sim);// this is how the front desk thread will start
@@ -100,7 +111,22 @@ public class Hotel implements Runnable
         }
 
 
-        
+        while(counter != 25){
+            try {
+                A.acquire();
+                Guest g = Hotel.Guest_retire.remove();
+                g.GuestThreads.join();
+                System.out.println(g.Role + g.GuestID + " joined");
+                counter++;
+                A.release();
+            } catch (Exception e) {
+                // TODO: handle exception
+            }
+            
+        }
+
+        System.out.println("exit");
+        System.exit(0);
         
 
     }
@@ -184,6 +210,7 @@ public class Hotel implements Runnable
                     System.out.println(Role + EmployeeID + " registers " + g.Role + g.GuestID + " and assigns room " + assignroomnumber);
 
                     Hotel.front_done.release();
+                    Hotel.GuestLeftfront.acquire();
                     Hotel.front_available.release();
 
                 }
@@ -219,7 +246,7 @@ public class Hotel implements Runnable
         public void run(){
            try {
             EnterHotel();
-            Hotel.Guest_mutex.acquireUninterruptibly();
+            Hotel.Guest_mutex.acquire();
             Hotel.FrontDeskWait.add(this); // adding the guest into the queue for the front
             Hotel.Guest_mutex.release();
 
@@ -228,11 +255,12 @@ public class Hotel implements Runnable
             Hotel.Guest_rdy.release(); // guest is ready once the fron is ready
             Hotel.front_done.acquire(); // front is done
             System.out.println(Role + GuestID + " receives room key for room " + Roomnumber + " from front desk employee " + front_ID);
+            Hotel.GuestLeftfront.release();
 
 
-            if(bags > 1){
+            if(bags > 2){
                 Hotel.bellhop_available.acquire();
-                Hotel.Guest_mutex.acquireUninterruptibly();
+                Hotel.Guest_mutex.acquire();
                 Hotel.BellHopWait.add(this);
                 System.out.println(Role + GuestID + " request help with bags");
                 Hotel.Guest_mutex.release();
@@ -252,6 +280,15 @@ public class Hotel implements Runnable
            } catch (Exception e) {
             // TODO: handle exception
            }
+
+           try {
+            Hotel.completed_mutex.acquire();
+            Hotel.Guest_retire.add(this);
+            Hotel.A.release();
+            Hotel.completed_mutex.release();
+           } catch (Exception e) {
+            // TODO: handle exception
+           }
         }
        public void EnterHotel(){
         if(bags <= 1){
@@ -264,3 +301,6 @@ public class Hotel implements Runnable
 
 
 }
+
+
+// make a variable that is that say guest is ready to join so this way main can look at it
