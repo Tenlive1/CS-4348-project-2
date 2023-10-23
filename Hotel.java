@@ -3,8 +3,6 @@
 
 
 import java.util.concurrent.Semaphore;
-import java.io.IOException;
-import java.nio.CharBuffer;
 import java.util.LinkedList;
 import java.util.Queue;
 import java.util.Random;
@@ -120,7 +118,6 @@ public class Hotel implements Runnable
                 counter++;
                 A.release();
             } catch (Exception e) {
-                // TODO: handle exception
             }
             
         }
@@ -173,7 +170,7 @@ public class Hotel implements Runnable
 
                 }
             } catch (Exception e) {
-                // TODO: handle exception
+
             }
 
         }
@@ -217,7 +214,7 @@ public class Hotel implements Runnable
 
 
             } catch (Exception e) {
-                // TODO: handle exception
+
             }
         }
     }
@@ -278,7 +275,7 @@ public class Hotel implements Runnable
 
             
            } catch (Exception e) {
-            // TODO: handle exception
+
            }
 
            try {
@@ -287,7 +284,7 @@ public class Hotel implements Runnable
             Hotel.A.release();
             Hotel.completed_mutex.release();
            } catch (Exception e) {
-            // TODO: handle exception
+
            }
         }
        public void EnterHotel(){
