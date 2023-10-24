@@ -25,6 +25,7 @@ public class Hotel implements Runnable
     static Semaphore givingtips;
     static Semaphore bellhop_done;
     static Semaphore GuestLeftfront;
+    static Semaphore roomassigned;
 
     //mutex
     static Semaphore Guest_mutex;
@@ -32,7 +33,6 @@ public class Hotel implements Runnable
     static Semaphore front_mutex;
     static Semaphore bell_mutex;
     static Semaphore A;
-    static Semaphore testing;
     static Semaphore Bellhop_got_tips;
 
 
@@ -64,6 +64,7 @@ public class Hotel implements Runnable
         bellhop_done = new Semaphore(0,true);
         GuestLeftfront = new Semaphore(0,true);
         Bellhop_got_tips=new Semaphore(0,true);
+        roomassigned = new Semaphore(0,true);
         
 
         A = new Semaphore(0,true);
@@ -72,7 +73,6 @@ public class Hotel implements Runnable
         front_mutex = new Semaphore(1,true);
         bell_mutex = new Semaphore(1,true);
         completed_mutex = new Semaphore(1, true);
-        testing = new Semaphore(1, true);
         // making the queue
         FrontDeskWait = new LinkedList<>();
         BellHopWait = new LinkedList<>();
@@ -93,12 +93,6 @@ public class Hotel implements Runnable
         int counter =0;
 
 
-        try {
-            
-            testing.release();
-        } catch (Exception e) {
-            System.out.println("testing");
-        }
         for(int x=0; x<MaxEmployee; x++){
             front_employee[x] = new Front_desk(x, sim);// this is how the front desk thread will start
         }
@@ -112,7 +106,6 @@ public class Hotel implements Runnable
 
 
         while(true){
-            System.out.println(counter);
             try {
                 
                 if(counter == 25){
@@ -124,6 +117,7 @@ public class Hotel implements Runnable
                 System.out.println(g.Role + g.GuestID + " joined");
                 counter++;
             } catch (Exception e) {
+                System.out.println("something is wrong with main");
             }
             
         }
@@ -198,14 +192,14 @@ public class Hotel implements Runnable
         }
 
         public void run() {
-            while(true){
-                try {
+           
+            try {
+                while(true){
                     Hotel.Guest_rdy.acquire();
                     Hotel.front_mutex.acquire();
                     Guest g = Hotel.FrontDeskWait.remove();
                     g.front_ID = EmployeeID;
                     assignroomnumber++;
-
                     g.Roomnumber = assignroomnumber; 
                     
                     Hotel.front_mutex.release();
@@ -215,9 +209,12 @@ public class Hotel implements Runnable
 
                     Hotel.GuestLeftfront.acquire();
                     Hotel.front_available.release();
-                } catch (Exception e) {
-                    System.out.println("caught front");
                 }
+            } catch (Exception e) {
+                e.printStackTrace();
+                System.out.println("caught front" );
+                System.exit(0);
+                
             }
         }
     }
@@ -245,31 +242,27 @@ public class Hotel implements Runnable
 
         public void run(){
            try {
+            EnterHotel();
             Hotel.Guest_mutex.acquire();
             Hotel.FrontDeskWait.add(this); // adding the guest into the queue for the front
-            EnterHotel();
             Hotel.Guest_mutex.release();
-
-
             Hotel.front_available.acquire();// seeing if the front is available
             Hotel.Guest_rdy.release(); // guest is ready once the fron is ready
+            Hotel.front_done.acquire(); // front is done   
             System.out.println(Role + GuestID + " receives room key for room " + Roomnumber + " from front desk employee " + front_ID);
-            Hotel.front_done.acquire(); // front is done
+            
             Hotel.GuestLeftfront.release();
 
 
             if(bags > 2){
-                Hotel.testing.acquire();
                 Hotel.BellHopWait.add(this);
                 System.out.println(Role + GuestID + " request help with bags");
-                Hotel.testing.release();
                 Hotel.bellhop_available.acquire();
                 Hotel.Givesbagstobell.release();
                 Hotel.receivebags.acquire();
                 System.out.println(Role + GuestID + " enter room " + Roomnumber);
                 Hotel.EnterRoom.release();
                 Hotel.deliver.acquire();
-                //wait for bell to get tips
                 System.out.println(Role + GuestID + " receives bags from Bellhop " + Bellhop_ID + " and gives tip");
                 Hotel.givingtips.release();
                 Hotel.bellhop_done.acquire();
